@@ -4,9 +4,8 @@ namespace CropScan
     public static class Constants
     {
         public const decimal CmsPerInch = 2.54M;
-        public const decimal DefaultMinResolution = 200;
-        public const decimal MinResolution = 72;
-        public const string DefaultSuffix = "-cropped";
+        public const decimal DefaultMinResolution = 100;
+        public const decimal MinAllowedResolution = 72;
 
         public const string StartOfString = "^";
         public const string EndOfString = "$";

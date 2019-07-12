@@ -12,7 +12,6 @@ namespace CropScan
             ExpectWidth,
             ExpectHeight,
             ExpectSuffix,
-            ExpectResolution
         }
 
         public static AppContext Parse(string[] args)
@@ -35,7 +34,7 @@ namespace CropScan
                             result.WidthCm = TryConvertLength(arg);
                             if (result.WidthCm.HasValue == false)
                             {
-                                result.AddFault($"Width parameter not in correct format - \"{arg}\"");
+                                result.AddFault($"Width parameter is not in the correct format - \"{arg}\"");
                             }
                             state = State.ExpectOption;
                             break;
@@ -43,17 +42,12 @@ namespace CropScan
                             result.HeightCm = TryConvertLength(arg);
                             if (result.HeightCm.HasValue == false)
                             {
-                                result.AddFault($"Height parameter not in correct format - \"{arg}\"");
+                                result.AddFault($"Height parameter is not in the correct format - \"{arg}\"");
                             }
                             state = State.ExpectOption;
                             break;
                         case State.ExpectSuffix:
-                            result.FileSuffix = arg;
-                            state = State.ExpectOption;
-                            break;
-                        case State.ExpectResolution:
-                            result.DefaultMinResX = Decimal.Parse(arg);
-                            result.DefaultMinResY = Decimal.Parse(arg);
+                            result.FileNameSuffix = arg;
                             state = State.ExpectOption;
                             break;
                         case State.ExpectOption:
@@ -67,7 +61,7 @@ namespace CropScan
                             }
                             else
                             {
-                                result.SearchPaths.Add(arg);
+                                result.SearchPatterns = arg;
                             }
                             break;
                         default:
@@ -107,9 +101,6 @@ namespace CropScan
                     case "s":
                         result = State.ExpectSuffix;
                         break;
-                    case "r":
-                        result = State.ExpectResolution;
-                        break;
                     default:
                         ctx.AddInvalidArgFault(arg);
                         break;
@@ -147,9 +138,6 @@ namespace CropScan
                     case "suffix":
                         result = State.ExpectSuffix;
                         break;
-                    case "resolution":
-                        result = State.ExpectResolution;
-                        break;
                     default:
                         ctx.AddInvalidArgFault(arg);
                         break;
@@ -164,24 +152,23 @@ namespace CropScan
 
         public static void ShowHelp()
         {
-            Console.WriteLine("Crops an image file given a new height and / or width measurements.");
+            Console.WriteLine("Crops an image file given new height and / or width measurements.");
             Console.WriteLine("The measurements can be specified in centimetres (cm) or inches (in).");
             Console.WriteLine();
-            Console.WriteLine("CropScan [-?] [-w width] [-h height] [-s suffix] [-r resolution] [-wi] [drive:][path]filename ...");
+            Console.WriteLine("CropScan [-?] [-w width] [-h height] [-s suffix] [-wi] filespec[;filespec]");
             Console.WriteLine();
-            Console.WriteLine("  -?             Show this help information.");
-            Console.WriteLine("  -w width       New width for the cropped image.");
-            Console.WriteLine("  -h height      New height for the cropped image.");
-            Console.WriteLine("  -s             Suffix to add to the filename to create a copy of the input file.");
-            Console.WriteLine("  -r resolution  Specifies the minimum resolution to assume when resolution information is missing and the");
-            Console.WriteLine("                 system defaults to 96dpi. The default value for this setting is 200dpi.");
-            Console.WriteLine("  -wi            Displays a message that describes the effect of the command, instead of executing the command.");
-            Console.WriteLine("  [drive:][path][filename]");
-            Console.WriteLine("                 Specifies drive, directory, and / or files to process.");
+            Console.WriteLine("  -?             Show this help information");
+            Console.WriteLine("  -w width       New width for the cropped image");
+            Console.WriteLine("  -h height      New height for the cropped image");
+            Console.WriteLine("  -s suffix      Suffix to add to the filename to create a copy of the input file");
+            Console.WriteLine("  -wi            Displays a message that describes the effect of the command, instead of executing the command");
+            Console.WriteLine();
+            Console.WriteLine("  [filespec]");
+            Console.WriteLine("                 File or files specification");
             Console.WriteLine();
             Console.WriteLine("Examples:");
             Console.WriteLine("CropScan -h 14.85cm *.jpg");
-            Console.WriteLine("CropScan -h 14.85cm -w 10in *.jpg *.png");
+            Console.WriteLine("CropScan -h 14.85cm -w 10in *.jpg;*.png");
             Console.WriteLine();
         }
 

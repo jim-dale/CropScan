@@ -20,142 +20,86 @@ namespace CropScan
             }
             else if (ctx.Faulted)
             {
+                ArgProcessor.ShowHelp();
                 ctx.ShowFaults();
             }
             else
             {
-                GetMatchingFiles(ctx.SearchPaths, ctx.Files);
-                if (ctx.Files.Count == 0)
-                {
-                    Console.WriteLine("No matching files.");
-                }
-                else
-                {
-                    foreach (var sourcePath in ctx.Files)
+                new ForEachFile()
+                    .Run(Directory.GetCurrentDirectory(), ctx.SearchPatterns, string.Empty, (file) =>
                     {
-                        CropImageFile(ctx, sourcePath);
-                    }
-                }
+                        CropImageFile(ctx, file);
+                    });
             }
         }
 
         /// <summary>
-        /// Loads an image file, crops it and finally saves it back to disk.
+        /// Loads an image file, crops it and saves it back to disk.
         /// </summary>
         /// <remarks>
         /// Loads the image into a memory buffer in case the source image file is
         /// overwritten by the cropped image. If the source image is loaded
-        /// directly into a Bitmap then the file is essentially locked and
-        /// can't be overwritten.
+        /// directly into a Bitmap then the file is locked and can't be overwritten.
+        /// There are probably much better ways of cropping an image and retain the source image pixel format
+        /// and resolution but this appears to work
         /// </remarks>
-        /// <param name="ctx">Encapsulates all app specific information required at runtime.</param>
-        /// <param name="path">Path to the source image file.</param>
+        /// <param name="ctx">Encapsulates all app specific information required at runtime</param>
+        /// <param name="fileContext">Encapsulates all file specific information required at runtime</param>
         private static void CropImageFile(AppContext ctx, string path)
         {
             using (var stream = new MemoryStream(File.ReadAllBytes(path)))
             {
-                using (var srcImage = new Bitmap(stream))
+                using (var sourceImage = new Bitmap(stream))
                 {
-                    decimal resX = Math.Round((decimal)srcImage.HorizontalResolution, 2);
-                    decimal resY = Math.Round((decimal)srcImage.VerticalResolution, 2);
+                    var fileContext = new FileContext { InputPath = path };
 
-                    resX = Math.Max(resX, ctx.DefaultMinResX);
-                    resY = Math.Max(resY, ctx.DefaultMinResY);
+                    fileContext.FromSourceImage(sourceImage, ctx.WidthCm, ctx.HeightCm);
+                    fileContext.SetOutputFile(fileContext.InputPath, ctx.FileNameSuffix);
 
-                    var cropCtx = new CropContext
+                    if (fileContext.SrcResX < ctx.DefaultMinResX || fileContext.SrcResY < ctx.DefaultMinResY)
                     {
-                        SourcePath = path,
-                        DestinationPath = GetNewFileName(path, ctx.FileSuffix),
-                        SrcWidthPx = srcImage.Width,
-                        SrcHeightPx = srcImage.Height,
-                        SrcWidthCm = ConvertPixelsToCm(srcImage.Width, resX),
-                        SrcHeightCm = ConvertPixelsToCm(srcImage.Height, resY),
-                        DestWidthPx = CalculateDimension(srcImage.Width, resX, ctx.WidthCm),
-                        DestHeightPx = CalculateDimension(srcImage.Height, resY, ctx.HeightCm),
-                        DestWidthCm = ctx.WidthCm,
-                        DestHeightCm = ctx.HeightCm,
-                        ResX = resX,
-                        ResY = resY
-                    };
-
-                    var cropRect = new Rectangle(0, 0, cropCtx.DestWidthPx, cropCtx.DestHeightPx);
-
-                    if (ctx.WhatIf == false)
+                        fileContext.Message = $"\"{fileContext.InputPath}\" {fileContext.SrcResX}x{fileContext.SrcResY} is less than the minimum required resolution";
+                    }
+                    else
                     {
-                        using (var destImage = srcImage.Clone(cropRect, srcImage.PixelFormat))
+                        if (fileContext.SrcWidthPx == fileContext.OutWidthPx && fileContext.SrcHeightPx == fileContext.OutHeightPx
+                            && fileContext.SrcResX == fileContext.SrcResX && fileContext.SrcResY == fileContext.SrcResY)
                         {
-                            destImage.Save(cropCtx.DestinationPath);
+                            fileContext.Message = $"\"{fileContext.InputPath}\" no changes are required";
+                        }
+                        else
+                        {
+                            if (ctx.WhatIf == false)
+                            {
+                                using (var destImage = sourceImage.Clone(fileContext.CropRect, sourceImage.PixelFormat))
+                                {
+                                    destImage.Save(fileContext.OutputPath);
+                                }
+                            }
+                            fileContext.Message = GetCropDescription(fileContext, ctx.WhatIf);
                         }
                     }
-                    cropCtx.Message = GetCropDescription(cropCtx, ctx.WhatIf);
-                    Console.WriteLine(cropCtx.Message);
+                    if (string.IsNullOrEmpty(fileContext.Message) == false)
+                    {
+                        Console.WriteLine(fileContext.Message);
+                    }
                 }
             }
         }
 
-        private static int CalculateDimension(int sourcePixels, decimal resolution, decimal? targetCm)
+        private static string GetCropDescription(FileContext ctx, bool whatIf)
         {
-            int result = sourcePixels;
+            string prefix = (whatIf) ? "WhatIf: " : string.Empty;
 
-            if (targetCm.HasValue)
-            {
-                decimal destPixels = (targetCm.Value / Constants.CmsPerInch) * resolution;
-                result = (int)Math.Round(destPixels);
-                result = Math.Min(sourcePixels, result);
-            }
-            return result;
-        }
+            var srcWidthCm = Utility.ConvertPixelsToCms(ctx.SrcWidthPx, ctx.SrcResX);
+            var srcHeightCm = Utility.ConvertPixelsToCms(ctx.SrcHeightPx, ctx.SrcResY);
+            string srcDimensions = $"{srcWidthCm}x" + $"{srcHeightCm}cm (WxH) ";
 
-        private static decimal ConvertPixelsToCm(int pixels, decimal resolution)
-        {
-            decimal result = (pixels / resolution) * Constants.CmsPerInch;
-            return Math.Round(result, 2);
-        }
+            var outWidthCm = Utility.ConvertPixelsToCms(ctx.OutWidthPx, ctx.SrcResX);
+            var outHeightCm = Utility.ConvertPixelsToCms(ctx.OutHeightPx, ctx.SrcResY);
+            string outDimensions = $"{outWidthCm}x" + $"{outHeightCm}cm (WxH) ";
 
-        private static string GetNewFileName(string path, string suffix)
-        {
-            string result = path;
-            if (string.IsNullOrEmpty(suffix) == false)
-            {
-                string directory = Path.GetDirectoryName(path);
-                string name = Path.GetFileNameWithoutExtension(path);
-                string ext = Path.GetExtension(path);
-
-                name = name + suffix + ext;
-                result = Path.Combine(directory, name);
-            }
-            return result;
-        }
-
-        private static void GetMatchingFiles(IReadOnlyCollection<string> searchPaths, ICollection<string> files)
-        {
-            foreach (var searchPath in searchPaths)
-            {
-                GetMatchingFiles(searchPath, files);
-            }
-        }
-
-        private static void GetMatchingFiles(string path, ICollection<string> files)
-        {
-            var request = Utility.GetDirectorySearchRequest(path);
-
-            var tempFiles = Directory.EnumerateFiles(request.Directory, request.SearchPattern);
-            foreach (string file in tempFiles)
-            {
-                files.Add(file);
-            }
-        }
-
-        private static string GetCropDescription(CropContext ctx, bool whatIf)
-        {
-            string prefix = (whatIf) ? "WhatIf: " : String.Empty;
-            string srcDimensions = $"{ctx.SrcWidthCm}x" + $"{ctx.SrcHeightCm}cm (WxH) ";
-            decimal destWidthCm = ctx.DestWidthCm ?? ctx.SrcWidthCm;
-            decimal destHeightCm = ctx.DestHeightCm ?? ctx.SrcHeightCm;
-            string destDimensions = $"{destWidthCm}x" + $"{destHeightCm}cm (WxH) ";
-
-            string result = prefix + $"\"{ctx.SourcePath}\" {srcDimensions} => \"{ctx.DestinationPath}\" {destDimensions}";
-            return result;
+            return prefix + $"\"{ctx.InputPath}\" {srcDimensions} => \"{ctx.OutputPath}\" {outDimensions}";
         }
     }
 }

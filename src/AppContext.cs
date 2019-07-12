@@ -12,16 +12,14 @@ namespace CropScan
         public decimal DefaultMinResY { get; set; }
         public decimal? WidthCm { get; set; }
         public decimal? HeightCm { get; set; }
-        public string FileSuffix { get; set; }
-        public List<string> SearchPaths { get; set; }
-        public HashSet<string> Files { get; set; }
+        public string FileNameSuffix { get; set; }
+        public string BasePath { get; set; }
+        public string SearchPatterns { get; set; }
         public bool Faulted { get; set; }
         public List<string> Faults { get; set; }
 
         public AppContext()
         {
-            SearchPaths = new List<string>();
-            Files = new HashSet<string>();
             Faults = new List<string>();
             DefaultMinResX = Constants.DefaultMinResolution;
             DefaultMinResY = Constants.DefaultMinResolution;
@@ -29,13 +27,17 @@ namespace CropScan
 
         public void Verify()
         {
+            if (string.IsNullOrEmpty(SearchPatterns))
+            {
+                AddFault("At least one file or file specification must be supplied");
+            }
             if (WidthCm.HasValue == false && HeightCm.HasValue == false)
             {
-                AddFault("At least the cropped Width or Height must be specified.");
+                AddFault("At least the Width or Height must be specified");
             }
-            if (DefaultMinResX < Constants.MinResolution || DefaultMinResY < Constants.MinResolution)
+            if (DefaultMinResX < Constants.MinAllowedResolution || DefaultMinResY < Constants.MinAllowedResolution)
             {
-                AddFault($"The minimum resolution is {Constants.MinResolution}dpi.");
+                AddFault($"The minimum resolution is {Constants.MinAllowedResolution}dpi");
             }
         }
 
@@ -57,14 +59,11 @@ namespace CropScan
 
         public void ShowFaults()
         {
-            if (Faulted)
+            foreach (var message in Faults)
             {
-                foreach (var message in Faults)
-                {
-                    Console.WriteLine(message);
-                }
-                Console.WriteLine();
+                Console.WriteLine(message);
             }
+            Console.WriteLine();
         }
     }
 }

@@ -2,44 +2,34 @@
 namespace CropScan
 {
     using System;
-    using System.IO;
 
-    public struct DirectorySearchRequest
+    public static partial class Utility
     {
-        public string Directory { get; set; }
-        public string SearchPattern { get; set; }
-
-        public DirectorySearchRequest(string directory, string searchPattern)
+        public static int CalculateDimension(int sourcePixels, decimal resolution, decimal? outputCms)
         {
-            Directory = directory;
-            SearchPattern = searchPattern;
+            int result = sourcePixels;
+
+            if (outputCms.HasValue)
+            {
+                result = ConvertCmsToPixels(outputCms.Value, resolution);
+
+                result = Math.Min(sourcePixels, result);
+            }
+            return result;
         }
-    }
 
-    public class Utility
-    {
-        public static DirectorySearchRequest GetDirectorySearchRequest(string path)
+        public static decimal ConvertPixelsToCms(int value, decimal resolution)
         {
-            string directory = null;
-            string searchPattern = "*";
+            decimal result = (value * Constants.CmsPerInch) / resolution;
 
-            if (string.IsNullOrWhiteSpace(path) == false)
-            {
-                if (Directory.Exists(path))
-                {
-                    directory = path;
-                }
-                else
-                {
-                    directory = Path.GetDirectoryName(path);
-                    searchPattern = Path.GetFileName(path);
-                }
-            }
-            if (string.IsNullOrWhiteSpace(directory))
-            {
-                directory = Directory.GetCurrentDirectory();
-            }
-            return new DirectorySearchRequest(directory, searchPattern);
+            return Math.Round(result, 2);
+        }
+
+        public static int ConvertCmsToPixels(decimal value, decimal resolution)
+        {
+            decimal result = (value * resolution) / Constants.CmsPerInch;
+
+            return (int)Math.Round(result);
         }
     }
 }

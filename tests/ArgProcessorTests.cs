@@ -30,7 +30,7 @@ namespace CropScan.UnitTests
         [TestMethod]
         public void EmptyArgTest()
         {
-            var ctx = ArgProcessor.Parse(new string[] { String.Empty });
+            var ctx = ArgProcessor.Parse(new string[] { string.Empty });
 
             Assert.IsNotNull(ctx);
             Assert.IsFalse(ctx.Faulted);
@@ -83,13 +83,13 @@ namespace CropScan.UnitTests
         [TestMethod]
         public void SearchPathsArgTest()
         {
-            string[] args = { "*.jpg", @"C:\Users\Public\Pictures\*.png" };
+            string[] args = { "*.jpg;*.png" };
 
             var ctx = ArgProcessor.Parse(args);
 
             Assert.IsNotNull(ctx);
             Assert.IsFalse(ctx.Faulted);
-            CollectionAssert.AreEquivalent(ctx.SearchPaths, args);
+            Assert.AreEqual("*.jpg;*.png", ctx.SearchPatterns);
         }
 
         [DataTestMethod]
@@ -102,7 +102,7 @@ namespace CropScan.UnitTests
 
             Assert.IsNotNull(ctx);
             Assert.IsFalse(ctx.Faulted);
-            Assert.AreEqual(expectedValue, ctx.FileSuffix);
+            Assert.AreEqual(expectedValue, ctx.FileNameSuffix);
         }
 
         [DataTestMethod]
@@ -164,8 +164,8 @@ namespace CropScan.UnitTests
             Assert.IsNotNull(ctx);
             Assert.IsFalse(ctx.Faulted);
             Assert.IsFalse(ctx.WhatIf);
-            Assert.AreEqual(suffixValue, ctx.FileSuffix);
-            Assert.AreEqual(searchPattern, ctx.SearchPaths[0]);
+            Assert.AreEqual(suffixValue, ctx.FileNameSuffix);
+            Assert.AreEqual(searchPattern, ctx.SearchPatterns);
             Assert.AreEqual(expectedHeigth, ctx.HeightCm.Value);
             Assert.AreEqual(expectedWidth, ctx.WidthCm.Value);
         }
