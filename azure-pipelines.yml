@@ -36,10 +36,10 @@ steps:
   inputs:
     sourceFolder: '$(Build.SourcesDirectory)'
     contents: |
-      **\bin\$(BuildConfiguration)\*.exe
-      **\bin\$(BuildConfiguration)\*.dll
-      **\bin\$(BuildConfiguration)\*.config
-      **\README.md
+      src\bin\$(BuildConfiguration)\*.exe
+      src\bin\$(BuildConfiguration)\*.dll
+      src\bin\$(BuildConfiguration)\*.config
+      README.md
     targetFolder: '$(Build.ArtifactStagingDirectory)'
     flattenFolders: true
 
