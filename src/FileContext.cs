@@ -5,7 +5,7 @@ namespace CropScan
     using System.Drawing;
     using System.IO;
 
-    public struct FileContext
+    public class FileContext
     {
         public string InputPath { get; set; }
         public decimal SrcResX { get; set; }
@@ -45,6 +45,21 @@ namespace CropScan
             }
 
             OutputPath = outputPath;
+        }
+
+        public string ToString(bool whatIf)
+        {
+            string prefix = (whatIf) ? "WhatIf: " : string.Empty;
+
+            var srcWidthCm = Utility.ConvertPixelsToCms(SrcWidthPx, SrcResX);
+            var srcHeightCm = Utility.ConvertPixelsToCms(SrcHeightPx, SrcResY);
+            string srcDimensions = $"{srcWidthCm}x" + $"{srcHeightCm}cm (WxH) ";
+
+            var outWidthCm = Utility.ConvertPixelsToCms(OutWidthPx, SrcResX);
+            var outHeightCm = Utility.ConvertPixelsToCms(OutHeightPx, SrcResY);
+            string outDimensions = $"{outWidthCm}x" + $"{outHeightCm}cm (WxH) ";
+
+            return prefix + $"\"{InputPath}\" {srcDimensions} => \"{OutputPath}\" {outDimensions}";
         }
     }
 }

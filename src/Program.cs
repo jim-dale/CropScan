@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
@@ -9,26 +8,28 @@ namespace CropScan
     {
         static void Main(string[] args)
         {
-            AppContext ctx = ArgProcessor.Parse(args);
-            if (ctx.Faulted == false)
+            var context = new AppContext()
+                .UseArgs(args);
+
+            if (context.Faulted == false)
             {
-                ctx.Verify();
+                context.Verify();
             }
-            if (ctx.ShowHelp)
+            if (context.ShowHelp)
             {
-                ArgProcessor.ShowHelp();
+                AppContext.ShowHelpText();
             }
-            else if (ctx.Faulted)
+            else if (context.Faulted)
             {
-                ArgProcessor.ShowHelp();
-                ctx.ShowFaults();
+                AppContext.ShowHelpText();
+                context.ShowFaults();
             }
             else
             {
                 new ForEachFile()
-                    .Run(Directory.GetCurrentDirectory(), ctx.SearchPatterns, string.Empty, (file) =>
+                    .Run(Directory.GetCurrentDirectory(), context.SearchPatterns, string.Empty, (file) =>
                     {
-                        CropImageFile(ctx, file);
+                        CropImageFile(context, file);
                     });
             }
         }
@@ -76,7 +77,7 @@ namespace CropScan
                                     destImage.Save(fileContext.OutputPath);
                                 }
                             }
-                            fileContext.Message = GetCropDescription(fileContext, ctx.WhatIf);
+                            fileContext.Message = fileContext.ToString(ctx.WhatIf);
                         }
                     }
                     if (string.IsNullOrEmpty(fileContext.Message) == false)
@@ -85,21 +86,6 @@ namespace CropScan
                     }
                 }
             }
-        }
-
-        private static string GetCropDescription(FileContext ctx, bool whatIf)
-        {
-            string prefix = (whatIf) ? "WhatIf: " : string.Empty;
-
-            var srcWidthCm = Utility.ConvertPixelsToCms(ctx.SrcWidthPx, ctx.SrcResX);
-            var srcHeightCm = Utility.ConvertPixelsToCms(ctx.SrcHeightPx, ctx.SrcResY);
-            string srcDimensions = $"{srcWidthCm}x" + $"{srcHeightCm}cm (WxH) ";
-
-            var outWidthCm = Utility.ConvertPixelsToCms(ctx.OutWidthPx, ctx.SrcResX);
-            var outHeightCm = Utility.ConvertPixelsToCms(ctx.OutHeightPx, ctx.SrcResY);
-            string outDimensions = $"{outWidthCm}x" + $"{outHeightCm}cm (WxH) ";
-
-            return prefix + $"\"{ctx.InputPath}\" {srcDimensions} => \"{ctx.OutputPath}\" {outDimensions}";
         }
     }
 }

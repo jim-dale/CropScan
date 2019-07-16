@@ -3,6 +3,7 @@ namespace CropScan
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     public class AppContext
     {
@@ -15,7 +16,7 @@ namespace CropScan
         public string FileNameSuffix { get; set; }
         public string BasePath { get; set; }
         public string SearchPatterns { get; set; }
-        public bool Faulted { get; set; }
+        public bool Faulted => Faults.Any();
         public List<string> Faults { get; set; }
 
         public AppContext()
@@ -53,7 +54,6 @@ namespace CropScan
 
         public void AddFault(string message)
         {
-            Faulted = true;
             Faults.Add(message);
         }
 
@@ -63,6 +63,28 @@ namespace CropScan
             {
                 Console.WriteLine(message);
             }
+            Console.WriteLine();
+        }
+
+        public static void ShowHelpText()
+        {
+            Console.WriteLine("Crops an image file given new height and / or width measurements.");
+            Console.WriteLine("The measurements can be specified in centimetres (cm) or inches (in).");
+            Console.WriteLine();
+            Console.WriteLine("CropScan [-?] [-w width] [-h height] [-s suffix] [-wi] filespec[;filespec]");
+            Console.WriteLine();
+            Console.WriteLine("  -?             Show this help information");
+            Console.WriteLine("  -w width       New width for the cropped image");
+            Console.WriteLine("  -h height      New height for the cropped image");
+            Console.WriteLine("  -s suffix      Suffix to add to the filename to create a copy of the input file");
+            Console.WriteLine("  -wi            Displays a message that describes the effect of the command, instead of executing the command");
+            Console.WriteLine();
+            Console.WriteLine("  [filespec]");
+            Console.WriteLine("                 File or files specification");
+            Console.WriteLine();
+            Console.WriteLine("Examples:");
+            Console.WriteLine("CropScan -h 14.85cm *.jpg");
+            Console.WriteLine("CropScan -h 14.85cm -w 10in *.jpg;*.png");
             Console.WriteLine();
         }
     }

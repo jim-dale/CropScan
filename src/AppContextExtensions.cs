@@ -4,7 +4,7 @@ namespace CropScan
     using System;
     using System.Text.RegularExpressions;
 
-    public class ArgProcessor
+    public static partial class AppContextExtensions
     {
         private enum State
         {
@@ -14,10 +14,8 @@ namespace CropScan
             ExpectSuffix,
         }
 
-        public static AppContext Parse(string[] args)
+        public static AppContext UseArgs(this AppContext result, string[] args)
         {
-            var result = new AppContext();
-
             try
             {
                 var state = State.ExpectOption;
@@ -148,28 +146,6 @@ namespace CropScan
                 ctx.AddInvalidArgFault(arg);
             }
             return result;
-        }
-
-        public static void ShowHelp()
-        {
-            Console.WriteLine("Crops an image file given new height and / or width measurements.");
-            Console.WriteLine("The measurements can be specified in centimetres (cm) or inches (in).");
-            Console.WriteLine();
-            Console.WriteLine("CropScan [-?] [-w width] [-h height] [-s suffix] [-wi] filespec[;filespec]");
-            Console.WriteLine();
-            Console.WriteLine("  -?             Show this help information");
-            Console.WriteLine("  -w width       New width for the cropped image");
-            Console.WriteLine("  -h height      New height for the cropped image");
-            Console.WriteLine("  -s suffix      Suffix to add to the filename to create a copy of the input file");
-            Console.WriteLine("  -wi            Displays a message that describes the effect of the command, instead of executing the command");
-            Console.WriteLine();
-            Console.WriteLine("  [filespec]");
-            Console.WriteLine("                 File or files specification");
-            Console.WriteLine();
-            Console.WriteLine("Examples:");
-            Console.WriteLine("CropScan -h 14.85cm *.jpg");
-            Console.WriteLine("CropScan -h 14.85cm -w 10in *.jpg;*.png");
-            Console.WriteLine();
         }
 
         private static decimal? TryConvertLength(string input)

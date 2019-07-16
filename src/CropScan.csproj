@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppContext.cs" />
-    <Compile Include="ArgProcessor.cs" />
+    <Compile Include="AppContextExtensions.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="FileContext.cs" />
     <Compile Include="ForEachFile.cs" />
